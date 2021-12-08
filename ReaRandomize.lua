@@ -22,8 +22,8 @@ end
 
 --Checks if # of plugins textbox contains a single digit number
 local function validateNumPlugins()
-  local numPluginTextbox = GUI.findElementByName("numPluginTextbox")
-  local tbcont = numPluginTextbox.retval
+  local numPluginsTextbox = GUI.findElementByName("numPluginsTextbox")
+  local tbcont = numPluginsTextbox.retval
   return string.len(tbcont) <= 1 and tonumber(tbcont) ~= nil
 end
 
@@ -31,11 +31,13 @@ end
 local function toggleHiddenOptions()
   local modeDropdown = GUI.findElementByName("modeDropdown")
   local selectedMode = modeDropdown.retval
+  local tabs = GUI.findElementByName("tabs")
+  local selectedTab = tabs.retval
   local numPluginTextbox = GUI.findElementByName("numPluginsTextbox")
-  if selectedMode == 2 then
-    layers[5]:show()
+  if selectedMode == 2 and selectedTab == 1 then
+    layers[3]:show()
   else
-    layers[5]:hide()
+    layers[3]:hide()
   end
 end
 
@@ -49,7 +51,7 @@ local window = GUI.createWindow({
   x = 0,
   y = 0,
   w = 432,
-  h = 500,
+  h = 540,
   anchor = "mouse",
   corner = "C",
 })
@@ -58,8 +60,7 @@ layers = table.pack( GUI.createLayers(
   {name = "Layer1", z = 1},
   {name = "Layer2", z = 2},
   {name = "Layer3", z = 3},
-  {name = "Layer4", z = 4},
-  {name = "Layer5", z = 5}
+  {name = "Layer4", z = 4}
 ))
 
 window:addLayers(table.unpack(layers))
@@ -80,15 +81,11 @@ layers[1]:addElements( GUI.createElements(
     h = 20,
     tabs = {
       {
-        label = "Main",
-        layers = {layers[2], layers[5]}
+        label = "Basic",
+        layers = {layers[2], layers[3]}
       },
       {
-        label = "ReaDelay",
-        layers = {layers[3]}
-      },
-      {
-        label = "ReaVerbate",
+        label = "Advanced",
         layers = {layers[4]}
       }
     },
@@ -99,7 +96,7 @@ layers[1]:addElements( GUI.createElements(
     name = "okButton",
     type = "Button",
     x = 168,
-    y = 470,
+    y = 510,
     w = 96,
     h = 20,
     caption = "Ok",
@@ -109,7 +106,7 @@ layers[1]:addElements( GUI.createElements(
     name = "frameDivider",
     type = "Frame",
     x = 0,
-    y = 460,
+    y = 500,
     w = window.w,
     h = 1,
   }
@@ -145,7 +142,7 @@ layers[2]:addElements( GUI.createElements(
     name = "pluginList",
     type = "Checklist",
     x = 44,
-    y = 116,
+    y = 126,
     w = 144,
     h = 144,
     caption = "Plugins",
@@ -155,7 +152,7 @@ layers[2]:addElements( GUI.createElements(
     name = "randomnessKnob",
     type = "Knob",
     x = 256,
-    y = 140,
+    y = 150,
     w = 96,
     caption = "Randomness",
     captionY = -36,
@@ -169,7 +166,7 @@ layers[2]:addElements( GUI.createElements(
     name = "modeDropdown",
     type = "Menubox",
     x = 172,
-    y = 310,
+    y = 330,
     w = 124,
     h = 24,
     caption = "Mode:",
@@ -177,28 +174,29 @@ layers[2]:addElements( GUI.createElements(
   }
 ))
 
-layers[5]:addElements( GUI.createElements(
+layers[3]:addElements( GUI.createElements(
   {
     name = "repeatedPlugins",
     type = "Checklist",
     x = 134,
-    y = 360,
-    w = 144,
-    h = 144,
+    y = 380,
+    w = 166,
+    h = 32,
     frame = false,
     caption = "",
-    options = {"Allow Repeated Plugins"}
+    options = {"Allow Repeated Plugins"},
+    selectedOptions = {true}
   },
   {
     name = "numPluginsTextbox",
     type = "Textbox",
     x = 244,
-    y = 400,
+    y = 420,
     w = 24,
     h = 24,
     caption = "# of Plugins:",
     pad = 8,
-    validator = numPluginsValidator,
+    validator = validateNumPlugins,
     validateOnType = true
   }
 ))
@@ -222,18 +220,62 @@ randomnessKnob:redraw()
 ------------------------------------
 
 
-layers[3]:addElements( GUI.createElements(
-  
-))
-
-
-------------------------------------
--------- Tab 3 Elements ------------
-------------------------------------
-
-
 layers[4]:addElements( GUI.createElements(
-  
+  {
+    name = "pitchParams",
+    type = "Checklist",
+    x = 44,
+    y = 56,
+    w = 144,
+    h = 120,
+    caption = "ReaPitch",
+    options = {"Shift","Formant Shift","Wet","Dry"},
+    selectedOptions = {true, true, false, false}
+  },
+  {
+    name = "gateParams",
+    type = "Checklist",
+    x = 244,
+    y = 56,
+    w = 144,
+    h = 192,
+    caption = "ReaGate",
+    options = {"Threshold","Attack","Hold","Release","Invert","Wet","Dry"},
+    selectedOptions = {true, true, false, true, false, false, false}
+  },
+  {
+    name = "eqParams",
+    type = "Checklist",
+    x = 44,
+    y = 196,
+    w = 144,
+    h = 120,
+    caption = "ReaEQ",
+    options = {"LPF Frequency","LPF Bandwidth","HPF Frequency","HPF Bandwidth"},
+    selectedOptions = {true, true, true, true}
+  },
+  {
+    name = "delayParams",
+    type = "Checklist",
+    x = 244,
+    y = 266,
+    w = 144,
+    h = 168,
+    caption = "ReaDelay",
+    options = {"Length","Feedback Gain","Feedback LPF","Feedback HPF","Wet","Dry"},
+    selectedOptions = {true, true, false, false, false, true}
+  },
+  {
+    name = "reverbParams",
+    type = "Checklist",
+    x = 44,
+    y = 336,
+    w = 144,
+    h = 144,
+    caption = "ReaVerbate",
+    options = {"Room Size","Reverb LPF","Reverb HPF","Wet","Dry"},
+    selectedOptions = {true, false, false, false, true}
+  }
 ))
 
 
