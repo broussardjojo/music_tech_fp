@@ -137,10 +137,32 @@ local function okBtnClick()
   -- Optional; Maybe make a checkbox for this one?
   RemoveAllFX(selected_track)
   
+  -- 1 for Exact, 2 for Random Plugins, 3 for the last one
+  mode = GUI.findElementByName("modeDropdown").retval
+  
   -- This is for "exact"
-  for k, v in pairs(selected_plugins) do
-    Msg("Plugin selected: " .. tostring(v))
-    RandomizeSelectedParameters(tostring(v), selected_track, delta)
+  if mode == 1 then
+    for k, v in pairs(selected_plugins) do
+      Msg("Plugin selected: " .. tostring(v))
+      RandomizeSelectedParameters(tostring(v), selected_track, delta)
+    end
+  elseif mode == 2 then
+    Msg("I haven't implemented this one yet")
+  elseif mode == 3 then
+    Msg("I haven't implemented this one either")
+  -- Chaos: Literally randomizes every parameter that it can
+  elseif mode == 4 then
+    for k, v in pairs(selected_plugins) do
+      Msg("Plugin seleceted: " .. tostring(v))
+      AddTrueRandomEffect(v, selected_track, delta)
+    end
+  end
+  
+  -- Enabling all effects now
+  effect_count = reaper.TrackFX_GetCount(selected_track)
+  for i = 0, effect_count - 1, 1
+  do
+    reaper.TrackFX_SetEnabled(selected_track, i, 1)
   end
 end
 
@@ -273,7 +295,7 @@ layers[2]:addElements( GUI.createElements(
     w = 124,
     h = 24,
     caption = "Mode:",
-    options = {"Exact", "Random Plugins", "Random All"}
+    options = {"Exact", "Random Plugins", "Random All", "Chaos"}
   }
 ))
 
@@ -453,7 +475,6 @@ function RandomizeSelectedParameters(effect_name, track, delta)
     Msg(effect_name..": Changed "..tostring(param_name).. " from "..tostring(default_val).." to "..tostring(param_val))
     reaper.TrackFX_SetParam(track, effect_position, v, param_val)
   end
-
 end
 
 ------------------------------------
