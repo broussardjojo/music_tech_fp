@@ -130,6 +130,14 @@ function Msg(param)
   reaper.ShowConsoleMsg(tostring(param).."\n")
 end
 
+local function get_keyset(t)
+  local keys={}
+  for key,_ in pairs(t) do
+    table.insert(keys, key)
+  end
+  return keys
+end
+
 -- Returns a table of the selected values for the provided checkbox.
 local function getSelectedFromCheckbox(checkbox_name)
   checkbox_list = GUI.findElementByName(checkbox_name)
@@ -184,6 +192,15 @@ function RandomizeSelectedParameters(effect_name, track, delta)
   selected_settings_table_name = plugin_to_settings_name[effect_name][1]
   effect_position = reaper.TrackFX_AddByName(track, effect_name, false, -1)
   
+  
+  -- EQ Stuff :/
+  if effect_name == "ReaEQ" then
+    lsfgain = randomFloat(-10, 2) * delta
+    hsfgain = randomFloat(-10, 2) * delta
+    q = reaper.TrackFX_SetParam(track, effect_position, 1, lsfgain)
+    r = reaper.TrackFX_SetParam(track, effect_position, 10, hsfgain)
+  end
+  
   -- ARDUOUS TASK OF GETTING STUFF FROM ADVANCED BOXES
   param_index_table_name = plugin_to_settings_name[effect_name][1]
   param_index_table = plugin_to_settings_name[effect_name][2]
@@ -217,9 +234,12 @@ local function generateEffects()
   
   delta = getDelta()
   
+  -- 1 for Exact, 2 for Random Plugins, 3 for the last one
+  mode = GUI.findElementByName("modeDropdown").retval
+  
   -- A table of the names of the selected plugins.
   selected_plugins = getSelectedFromCheckbox("pluginList")
-  if selected_plugins[1] == nil then
+  if (selected_plugins[1] == nil) and (mode ~= 4) then
     reaper.ShowMessageBox("Please select at least 1 effect!", "Error", 0)
     return
   end
@@ -230,19 +250,54 @@ local function generateEffects()
   -- 1 for Exact, 2 for Random Plugins, 3 for the last one
   mode = GUI.findElementByName("modeDropdown").retval
   
-  -- This is for "exact"
+  -- This is for "exact" mode
   if mode == 1 then
     for k, v in pairs(selected_plugins) do
       Msg("Plugin selected: " .. tostring(v))
       RandomizeSelectedParameters(tostring(v), selectedTrack, delta)
     end
+  -- This one's for "Random Plugins"
   elseif mode == 2 then
-    Msg("I haven't implemented this one yet")
+    -- Are we allowed to repeat plugins?
+    repeat_plugins = GUI.findElementByName("repeatedPlugins").selectedOptions[1]
+    fx_to_add = {}
+    num_fx_to_add = tonumber(GUI.findElementByName("numPluginsTextbox").retval)
+    if repeat_plugins then
+      for i = 1, num_fx_to_add, 1 do
+        table.insert(fx_to_add, selected_plugins[math.random(1, #selected_plugins)])
+      end
+      for k, v in pairs(fx_to_add) do
+        Msg("Adding Plugin: " .. tostring(v))
+        RandomizeSelectedParameters(tostring(v), selectedTrack, delta)
+      end
+    else
+      if (num_fx_to_add > #selected_plugins) then
+        Msg("Only able to add "..tostring(#selected_plugins).." plugins. For more, enable repeat plugins.")
+        num_fx_to_add = #selected_plugins
+      end
+      for i = 1, num_fx_to_add, 1 do
+        -- Doing this to keep track of what we've removed from plugins we've already applied
+        -- its a little gross :(
+        keys = get_keyset(selected_plugins)
+        rand_index = math.random(#keys)
+        table.insert(fx_to_add, table.remove(selected_plugins, rand_index))
+        table.remove(keys, rand_index)
+      end
+      for k, v in pairs(fx_to_add) do
+        Msg("Plugin selected: " .. tostring(v))
+        RandomizeSelectedParameters(tostring(v), selectedTrack, delta)
+      end
+    end
+  -- And this one's for Random All
   elseif mode == 3 then
     for k, v in pairs(selected_plugins) do
       Msg("Plugin seleceted: " .. tostring(v))
       AddTrueRandomEffect(v, selectedTrack, delta)
     end
+    
+  elseif mode == 4 then
+    Msg("Randomizing settings for TyrellN6")
+    AddTrueRandomEffect("TyrellN6", selectedTrack, delta)
   end
   
   -- Enabling all effects now
@@ -381,7 +436,7 @@ layers[2]:addElements( GUI.createElements(
     w = 124,
     h = 24,
     caption = "Mode:",
-    options = {"Exact", "Random Plugins", "Random All"}
+    options = {"Exact", "Random Plugins", "Random All", "tyrell"}
   }
 ))
 
